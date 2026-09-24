@@ -978,16 +978,11 @@
     var reason = errorMsg ? (' (' + escapeHtml(errorMsg) + ')') : ' (no OAuth Client ID set in Settings)';
     if (ok) {
       showStatus(els.saveStatus, 'info',
-        'Couldn\u2019t auto-save' + reason + '. Copied instead \u2014 click the first empty cell in your sheet\u2019s next row and paste (Ctrl/Cmd+V).');
+        'Couldn\u2019t auto-save' + reason + '. Copied instead \u2014 click the first empty cell in your sheet\u2019s next row and paste (Ctrl/Cmd+V). Tap "Done \u2014 add another" below when you\u2019re ready to move on.');
     } else {
       showStatus(els.saveStatus, 'err',
         'Couldn\u2019t auto-save' + reason + ', and clipboard copy was blocked. Select and copy this manually:<pre class="row-copy">' + escapeHtml(text) + '</pre>');
     }
-    setTimeout(function(){
-      els.formCard.style.display = 'none';
-      els.retakeBtn.click();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 2200);
   });
 
   els.manualCopyBtn.addEventListener('click', async function(){
