@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disc Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #16171a;
+    --bg-raised: #1f2126;
+    --label: #ece7dd;
+    --label-dim: #d8d2c4;
+    --marquee-red: #8a2f28;
+    --marquee-red-bright: #ab3c33;
+    --brass: #c99a4a;
+    --brass-bright: #ddb45c;
+    --ink: #201705;
+    --teal: #4c6f6a;
+    --text: #ece7dd;
+    --text-dim: #a9ac9f;
+    --line: #383d43;
+    --radius: 14px;
+    --serif: 'Fraunces', Georgia, serif;
+    --mono: 'Space Mono', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 60px;
+  }
+
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 18px; }
+
+  /* ---- header, styled like a marquee ---- */
+  .header {
+    position: relative;
+    padding: 34px 18px 28px;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(201,154,74,0.10), transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+    overflow: hidden;
+  }
+  .header::before, .header::after{
+    content:"";
+    position:absolute;
+    top:0; bottom:0;
+    width:34%;
+    background: repeating-linear-gradient(90deg, var(--brass) 0 2px, transparent 2px 14px);
+    opacity:.12;
+  }
+  .header::before{ left:0; }
+  .header::after{ right:0; }
+  .brand {
+    position: relative;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 30px;
+    letter-spacing: 0.01em;
+    color: var(--brass-bright);
+    margin: 0;
+  }
+  .brand .dot {
+    display:inline-block;
+    width:9px; height:9px;
+    border-radius:50%;
+    background: var(--marquee-red-bright);
+    margin: 0 2px 4px;
+  }
+  .tagline {
+    position: relative;
+    margin: 6px 0 0;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- generic card ---- */
+  .card {
+    background: var(--bg-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-top: 20px;
+    overflow: hidden;
+  }
+  .card-body { padding: 18px; }
+  .card-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--label-dim);
+    margin: 0 0 4px;
+  }
+  .card-sub { color: var(--text-dim); font-size: 12.5px; margin: 0 0 14px; }
+
+  details.card { padding: 0; }
+  details.card summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--serif);
+    font-weight: 600;
+    color: var(--label-dim);
+    font-size: 15px;
+  }
+  details.card summary::-webkit-details-marker { display: none; }
+  summary .chev { transition: transform 0.2s ease; color: var(--text-dim); }
+  details[open] summary .chev { transform: rotate(90deg); }
+  .settings-body { padding: 0 18px 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 6px; }
+  .btn-row button { width: auto; flex: 1; }
+  .status.info { background: rgba(201,154,74,0.1); border: 1px solid var(--brass); color: var(--label-dim); }
+  .hint { font-size: 12px; color: var(--text-dim); margin-top: -6px; margin-bottom: 12px; }
+  .hint code { color: var(--brass-bright); background: rgba(201,154,74,0.1); padding: 1px 5px; border-radius: 4px; }
+
+  label.field-label {
+    display:block;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 10px 11px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--brass);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+
+  /* ---- buttons ---- */
+  button {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    border-radius: 9px;
+    padding: 13px 18px;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  button:active { transform: scale(0.985); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--marquee-red); color: var(--label); }
+  .btn-primary:hover:not(:disabled) { background: var(--marquee-red-bright); }
+  .btn-gold { background: var(--brass); color: var(--ink); }
+  .btn-gold:hover:not(:disabled) { background: var(--brass-bright); }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--line); }
+  .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--text-dim); }
+
+  /* ---- capture zones ---- */
+  .capture-row { display:flex; gap: 10px; }
+  .capture-zone {
+    flex: 1;
+    border: 1.5px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 26px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .capture-zone:hover { border-color: var(--brass); background: rgba(201,154,74,0.04); }
+  .capture-zone.filled { border-style: solid; border-color: var(--teal); }
+  .capture-icon {
+    width: 42px; height: 42px;
+    margin: 0 auto 10px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #100c09, var(--ink));
+    position: relative;
+    border: 2px solid var(--line);
+  }
+  .capture-icon::after{
+    content:"";
+    position:absolute; top:50%; left:50%;
+    width:14px; height:14px;
+    border-radius:50%;
+    border: 2px solid var(--brass);
+    transform: translate(-50%,-50%);
+  }
+  .capture-label { font-family: var(--serif); font-weight: 600; font-size: 14px; color: var(--label-dim); }
+  .capture-sub { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
+
+  .preview-wrap { padding: 14px; display:flex; gap:10px; }
+  .preview-wrap .preview-slot { flex:1; }
+  .preview-img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #000;
+    display: block;
+  }
+  .preview-caption { text-align:center; font-size:11px; color:var(--text-dim); margin-top:6px; }
+
+  /* ---- spinning reel loader ---- */
+  .loader-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px;
+    color: var(--text-dim);
+    font-size: 13.5px;
+  }
+  .reel {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background:
+      radial-gradient(circle at center, var(--brass) 0 6%, var(--ink) 6% 10%, #100c09 10% 38%, var(--ink) 38% 42%, #100c09 42% 100%);
+    animation: spin 1.1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- form grid ---- */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .field-grid .full { grid-column: 1 / -1; }
+  .section-label {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--brass-bright);
+    margin: 14px 0 8px;
+    grid-column: 1 / -1;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* ---- status messages ---- */
+  .status { border-radius: 9px; padding: 12px 14px; font-size: 13px; margin-top: 12px; }
+  .status.ok { background: rgba(76,111,106,0.22); border: 1px solid var(--teal); color: #c9d9d6; }
+  .status.err { background: rgba(138,47,40,0.2); border: 1px solid var(--marquee-red-bright); color: #f0c9c5; }
+
+  pre.row-copy {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    overflow-x: auto;
+    white-space: pre;
+    margin: 0 0 10px;
+  }
+
+  /* ---- session log ---- */
+  .log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 10px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-title { font-family: var(--serif); font-weight: 600; color: var(--label-dim); font-size: 14px; }
+  .log-sub { color: var(--text-dim); font-size: 12.5px; }
+  .log-badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    background: rgba(76,111,106,0.25); color: #c9d9d6;
+  }
+  .empty-log { color: var(--text-dim); font-size: 13px; text-align: center; padding: 10px 0; }
+  .log-actions { margin-top: 12px; }
+  .clear-log { background:none; border:none; color: var(--text-dim); font-size: 11.5px; width:auto; padding: 4px 0; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="brand">Disc<span class="dot"></span>Vault</p>
+  <p class="tagline">photograph the case &middot; confirm the details &middot; straight into the shelf</p>
+</div>
+
+<div class="wrap">
+
+  <details class="card" id="settingsCard">
+    <summary>Settings <span class="chev">&rsaquo;</span></summary>
+    <div class="settings-body">
+      <label class="field-label">Anthropic API Key</label>
+      <input type="text" id="anthropicKeyInput" placeholder="sk-ant-...">
+      <div class="hint">From console.anthropic.com &rarr; API Keys. Used for the photo-identification step. Billed separately from any Claude.ai subscription &mdash; typically a fraction of a cent per photo.</div>
+
+      <label class="field-label">Google OAuth Client ID</label>
+      <input type="text" id="clientIdInput" placeholder="xxxxxxxx.apps.googleusercontent.com">
+      <div class="hint">From Google Cloud Console &rarr; Credentials. Needed once per device/browser.</div>
+
+      <label class="field-label">Spreadsheet ID</label>
+      <input type="text" id="sheetIdInput" placeholder="paste the ID from your sheet's URL">
+      <div class="hint">The long string between <code>/d/</code> and <code>/edit</code> in your Google Sheet's URL.</div>
+
+      <div class="btn-row">
+        <button class="btn-ghost" id="saveSettingsBtn">Save settings</button>
+        <button class="btn-ghost" id="testConnectionBtn">Test connection</button>
+      </div>
+      <div id="settingsStatus"></div>
+    </div>
+  </details>
+
+  <div class="card" id="captureCard">
+    <div class="card-body">
+      <p class="card-title">Add a disc</p>
+      <p class="card-sub">Front cover is required. Add the back too &mdash; that's usually where director, cast, runtime and barcode are printed.</p>
+
+      <input type="file" accept="image/*" capture="environment" id="frontPhotoInput" style="display:none">
+      <input type="file" accept="image/*" capture="environment" id="backPhotoInput" style="display:none">
+      <div class="capture-row">
+        <div class="capture-zone" id="frontCaptureZone">
+          <div class="capture-icon"></div>
+          <div class="capture-label" id="frontCaptureLabel">Front cover</div>
+          <div class="capture-sub">tap to photograph</div>
+        </div>
+        <div class="capture-zone" id="backCaptureZone">
+          <div class="capture-icon"></div>
+          <div class="capture-label" id="backCaptureLabel">Back cover</div>
+          <div class="capture-sub">optional, recommended</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="previewCard" style="display:none">
+    <div class="preview-wrap">
+      <div class="preview-slot">
+        <img id="frontPreviewImg" class="preview-img" alt="Front cover preview">
+        <div class="preview-caption">Front</div>
+      </div>
+      <div class="preview-slot" id="backPreviewSlot" style="display:none">
+        <img id="backPreviewImg" class="preview-img" alt="Back cover preview">
+        <div class="preview-caption">Back</div>
+      </div>
+    </div>
+    <div class="card-body" style="padding-top:0">
+      <button class="btn-gold" id="identifyBtn">Identify disc</button>
+      <button class="btn-ghost" id="retakeBtn" style="margin-top:8px">Retake photos</button>
+    </div>
+  </div>
+
+  <div class="card" id="identifyErrorCard" style="display:none">
+    <div class="card-body" id="identifyErrorBody"></div>
+  </div>
+
+  <div class="card" id="loadingCard" style="display:none">
+    <div class="loader-row">
+      <div class="reel"></div>
+      <span id="loadingText">Reading the case&hellip;</span>
+    </div>
+  </div>
+
+  <div class="card" id="formCard" style="display:none">
+    <div class="card-body">
+      <p class="card-title">Confirm the details</p>
+      <p class="card-sub">Everything's editable &mdash; fix anything the AI got wrong before saving.</p>
+
+      <label class="field-label">File under</label>
+      <input type="text" id="fileUnderInput" placeholder="e.g. Dark Knight, or Godfather">
+      <div class="hint">The title this gets alphabetized by, with a leading "The/A/An" dropped. Pre-filled with a guess &mdash; override it any time.</div>
+
+      <div class="field-grid" id="formFields"></div>
+
+      <button class="btn-primary" id="copyBtn" style="margin-top:14px">Auto add to sheet</button>
+      <button class="btn-gold" id="manualCopyBtn" style="margin-top:8px">Copy row for the sheet</button>
+      <button class="btn-ghost" id="doneBtn" style="margin-top:8px">Done &mdash; add another</button>
+      <div id="saveStatus"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <p class="card-title">This session</p>
+      <p class="card-sub">Paste rows one at a time, or copy everything below at once &mdash; a single paste into the first empty cell fills every row.</p>
+      <div id="logList"><div class="empty-log">No discs added yet</div></div>
+      <div class="log-actions" id="logActions" style="display:none">
+        <button class="btn-gold" id="copyAllBtn">Copy all as one paste block</button>
+        <button class="clear-log" id="clearLogBtn">Clear this session's log</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Claude's replies are supposed to be pure JSON but sometimes include a stray
+  // sentence before/after it despite instructions -- pull out just the {...} part.
+  function extractJson(text){
+    var start = text.indexOf('{');
+    var end = text.lastIndexOf('}');
+    if (start === -1 || end === -1 || end < start) {
+      throw new Error('No JSON object found in response: ' + text.slice(0,150));
+    }
+    return JSON.parse(text.slice(start, end + 1));
+  }
+
+  // Reads a fetch Response as text first, so a parse failure can show the actual raw body
+  // instead of an opaque browser error.
+  async function parseJsonResponse(resp){
+    var text = await resp.text();
+    try {
+      return JSON.parse(text);
+    } catch(e) {
+      throw new Error('Response was not valid JSON (' + resp.status + '): ' + text.slice(0,200));
+    }
+  }
+
+  // ---------- field schema, matching the sheet's exact column order (A:N) ----------
+  var FIELDS = [
+    { key: "title",             label: "Title",              section: "Identification", full: true },
+    { key: "director",          label: "Director",           section: "Identification" },
+    { key: "year",              label: "Release Year",       section: "Identification" },
+    { key: "genre",             label: "Genre",              section: "Details" },
+    { key: "runtime",           label: "Runtime",            section: "Details" },
+    { key: "format",            label: "Format",             section: "Disc" },
+    { key: "studio",            label: "Studio",             section: "Disc" },
+    { key: "distributor",       label: "Distributor",        section: "Disc" },
+    { key: "edition",           label: "Edition / Special Features", section: "Disc", full: true },
+    { key: "barcode_upc",       label: "Barcode / UPC",      section: "Disc" },
+    { key: "actors",            label: "Cast",               section: "Disc", full: true },
+    { key: "imdb_rating",       label: "IMDb Rating",        section: "Disc" },
+    { key: "verification_status", label: "Verification Status", section: "Notes", full: true },
+    { key: "notes",             label: "Notes",              section: "Notes", full: true, textarea: true }
+  ];
+
+  var DEFAULT_CLIENT_ID = "16459720527-nh57guh4vo1foqioftqqhsegfjgh1llv.apps.googleusercontent.com";
+  var DEFAULT_SHEET_ID = "1FfD5VveqEeLnghPqUAsxPZHBEvhLTW950eKi9lCyF8A";
+
+  var els = {
+    frontPhotoInput: document.getElementById('frontPhotoInput'),
+    backPhotoInput: document.getElementById('backPhotoInput'),
+    frontCaptureZone: document.getElementById('frontCaptureZone'),
+    backCaptureZone: document.getElementById('backCaptureZone'),
+    frontCaptureLabel: document.getElementById('frontCaptureLabel'),
+    backCaptureLabel: document.getElementById('backCaptureLabel'),
+    previewCard: document.getElementById('previewCard'),
+    frontPreviewImg: document.getElementById('frontPreviewImg'),
+    backPreviewImg: document.getElementById('backPreviewImg'),
+    backPreviewSlot: document.getElementById('backPreviewSlot'),
+    identifyBtn: document.getElementById('identifyBtn'),
+    retakeBtn: document.getElementById('retakeBtn'),
+    loadingCard: document.getElementById('loadingCard'),
+    loadingText: document.getElementById('loadingText'),
+    identifyErrorCard: document.getElementById('identifyErrorCard'),
+    identifyErrorBody: document.getElementById('identifyErrorBody'),
+    formCard: document.getElementById('formCard'),
+    formFields: document.getElementById('formFields'),
+    fileUnderInput: document.getElementById('fileUnderInput'),
+    copyBtn: document.getElementById('copyBtn'),
+    manualCopyBtn: document.getElementById('manualCopyBtn'),
+    doneBtn: document.getElementById('doneBtn'),
+    saveStatus: document.getElementById('saveStatus'),
+    logList: document.getElementById('logList'),
+    logActions: document.getElementById('logActions'),
+    copyAllBtn: document.getElementById('copyAllBtn'),
+    clearLogBtn: document.getElementById('clearLogBtn'),
+    clientIdInput: document.getElementById('clientIdInput'),
+    sheetIdInput: document.getElementById('sheetIdInput'),
+    anthropicKeyInput: document.getElementById('anthropicKeyInput'),
+    saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+    testConnectionBtn: document.getElementById('testConnectionBtn'),
+    settingsStatus: document.getElementById('settingsStatus'),
+    settingsCard: document.getElementById('settingsCard')
+  };
+
+  var state = {
+    frontImageBase64: null, frontImageMediaType: null,
+    backImageBase64: null, backImageMediaType: null,
+    accessToken: null, sheetInfo: null
+  };
+
+  // ---------- settings persistence (plain localStorage -- this is a standalone site) ----------
+  async function loadSettings(){
+    els.clientIdInput.value = DEFAULT_CLIENT_ID;
+    els.sheetIdInput.value = DEFAULT_SHEET_ID;
+    try {
+      var raw = localStorage.getItem('disc_vault_settings');
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s.clientId) els.clientIdInput.value = s.clientId;
+        if (s.sheetId) els.sheetIdInput.value = s.sheetId;
+        if (s.anthropicKey) els.anthropicKeyInput.value = s.anthropicKey;
+      }
+    } catch(e) {}
+  }
+  async function saveSettings(){
+    var s = { clientId: els.clientIdInput.value.trim(), sheetId: els.sheetIdInput.value.trim(), anthropicKey: els.anthropicKeyInput.value.trim() };
+    try {
+      localStorage.setItem('disc_vault_settings', JSON.stringify(s));
+      showStatus(els.settingsStatus, 'ok', 'Saved.');
+    } catch(e) {
+      showStatus(els.settingsStatus, 'err', 'Could not save settings: ' + e.message);
+    }
+  }
+
+  // ---------- Google Sheets OAuth + write ----------
+  function loadGis(){
+    return new Promise(function(resolve, reject){
+      if (window.google && window.google.accounts && window.google.accounts.oauth2) { resolve(); return; }
+      var s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true; s.defer = true;
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error('Google\u2019s auth script did not load.')); };
+      document.head.appendChild(s);
+      setTimeout(function(){ reject(new Error('Timed out waiting for Google\u2019s auth script.')); }, 8000);
+    });
+  }
+  function getAccessToken(clientId){
+    return new Promise(async function(resolve, reject){
+      try { await loadGis(); } catch(e) { reject(e); return; }
+      try {
+        var client = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'https://www.googleapis.com/auth/spreadsheets',
+          callback: function(resp){
+            if (resp.error) reject(new Error(resp.error));
+            else resolve(resp.access_token);
+          }
+        });
+        client.requestAccessToken();
+      } catch(e) { reject(e); }
+    });
+  }
+  async function getSheetInfo(spreadsheetId, token, targetGid){
+    var resp = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + '?fields=sheets.properties',
+      { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!resp.ok) throw new Error('Could not read spreadsheet metadata (HTTP ' + resp.status + ').');
+    var data = await parseJsonResponse(resp);
+    var sheets = data.sheets || [];
+    var match = null;
+    if (targetGid != null) match = sheets.find(function(sh){ return String(sh.properties.sheetId) === String(targetGid); });
+    if (!match) match = sheets[0];
+    if (!match) throw new Error('No sheet tabs found in this spreadsheet.');
+    return { title: match.properties.title, gid: match.properties.sheetId };
+  }
+
+  async function getExistingTitles(spreadsheetId, token, sheetTitle){
+    var range = encodeURIComponent(sheetTitle) + '!A2:A';
+    var resp = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + '/values/' + range,
+      { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!resp.ok) throw new Error('Could not read existing titles (HTTP ' + resp.status + ').');
+    var data = await parseJsonResponse(resp);
+    return (data.values || []).map(function(row){ return (row[0] || '').trim(); }).filter(Boolean);
+  }
+
+  async function computeInsertIndex(existingTitles, newTitle, apiKey, fileUnderOverride){
+    if (!existingTitles.length) return 0;
+    var listText = existingTitles.map(function(a, i){ return (i+1) + '. ' + a; }).join('\n');
+    var overrideClause = fileUnderOverride
+      ? "\nIMPORTANT: The correct filing title for the new film has already been determined to be \"" + fileUnderOverride + "\". Use this exact filing title for the new film rather than working it out yourself \u2014 just apply the same sorting rule to each EXISTING title to find where \"" + fileUnderOverride + "\" belongs alphabetically among them.\n"
+      : "";
+    var prompt = "You are alphabetizing a DVD/Blu-ray collection by film title, in the order rows currently appear in a spreadsheet.\n\n" +
+      "Sorting rule:\n" +
+      "- Ignore a leading \"The\", \"A\", or \"An\" in a film title (e.g. \"The Godfather\" sorts as \"Godfather\", under G; \"A Clockwork Orange\" sorts as \"Clockwork Orange\", under C).\n" +
+      "- Otherwise sort plain alphabetically by the remaining title text.\n" +
+      overrideClause + "\n" +
+      "Existing titles, in their current order:\n" + listText + "\n\n" +
+      "New title to insert: \"" + newTitle + "\"\n\n" +
+      "You may think briefly (a sentence or two at most) before answering, but then respond with a JSON object on its own: {\"insert_index\": N} where N is the 0-based position BEFORE which the new title should be inserted (0 means before the first title in the list; " + existingTitles.length + " means after the last). Pick the position that keeps the list correctly alphabetized per the rule above, assuming the existing list is already correctly ordered by that rule.";
+
+    var resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1500,
+        messages: [
+          { role: "user", content: prompt }
+        ]
+      })
+    });
+    if (!resp.ok) throw new Error('Sort-position request failed (HTTP ' + resp.status + ').');
+    var data = await parseJsonResponse(resp);
+    var textBlock = (data.content || []).find(function(b){ return b.type === 'text'; });
+    if (!textBlock) throw new Error('No response computing sort position.');
+    var parsed = extractJson(textBlock.text);
+    var idx = parseInt(parsed.insert_index, 10);
+    if (isNaN(idx) || idx < 0) idx = 0;
+    if (idx > existingTitles.length) idx = existingTitles.length;
+    return idx;
+  }
+
+  async function insertRowAtPosition(spreadsheetId, token, numericSheetId, sheetTitle, insertIndex, values){
+    // insertIndex is 0-based among data rows (row 2 in the sheet = index 0).
+    var gridIndex = insertIndex + 1; // row 0 in the grid is the header row
+    var batchResp = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + ':batchUpdate', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          insertDimension: {
+            range: { sheetId: numericSheetId, dimension: 'ROWS', startIndex: gridIndex, endIndex: gridIndex + 1 },
+            inheritFromBefore: false
+          }
+        }]
+      })
+    });
+    if (!batchResp.ok) {
+      var errText1 = await batchResp.text();
+      throw new Error('Could not insert row (HTTP ' + batchResp.status + '): ' + errText1.slice(0,200));
+    }
+    var sheetRowNumber = insertIndex + 2; // +1 for header, +1 for 1-indexing
+    var range = encodeURIComponent(sheetTitle) + '!A' + sheetRowNumber + ':N' + sheetRowNumber;
+    var updateResp = await fetch(
+      'https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + '/values/' + range + '?valueInputOption=USER_ENTERED',
+      {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [ rowArray(values) ] })
+      }
+    );
+    if (!updateResp.ok) {
+      var errText2 = await updateResp.text();
+      throw new Error('Row inserted but could not fill values (HTTP ' + updateResp.status + '): ' + errText2.slice(0,200));
+    }
+  }
+
+  async function appendRowToSheet(spreadsheetId, token, sheetTitle, values){
+    var range = encodeURIComponent(sheetTitle) + '!A:N';
+    var resp = await fetch(
+      'https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + '/values/' + range +
+      ':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+      {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [ rowArray(values) ] })
+      }
+    );
+    if (!resp.ok) {
+      var errText = await resp.text();
+      throw new Error('Sheets API error (HTTP ' + resp.status + '): ' + errText.slice(0,200));
+    }
+  }
+
+  // ---------- persistence helpers ----------
+  async function loadLog(){
+    try {
+      var raw = localStorage.getItem('disc_vault_entries');
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return [];
+  }
+  async function saveLog(log){
+    localStorage.setItem('disc_vault_entries', JSON.stringify(log));
+  }
+  async function appendToLog(values, saved, placedAlphabetically, sortFallbackReason){
+    var log = await loadLog();
+    log.unshift({
+      title: values.title,
+      director: values.director,
+      row: rowArray(values),
+      saved: !!saved,
+      placedAlphabetically: !!placedAlphabetically,
+      sortFallbackReason: sortFallbackReason || null,
+      ts: Date.now()
+    });
+    await saveLog(log);
+    renderLog(log);
+    return log;
+  }
+  function renderLog(log){
+    if (!log.length) {
+      els.logList.innerHTML = '<div class="empty-log">No discs added yet</div>';
+      els.logActions.style.display = 'none';
+      return;
+    }
+    els.logActions.style.display = 'block';
+    els.logList.innerHTML = log.map(function(item){
+      var badge;
+      if (!item.saved) badge = 'Copied only';
+      else if (item.placedAlphabetically) badge = 'Alphabetized';
+      else badge = 'Appended at bottom';
+      var detail = (item.saved && !item.placedAlphabetically && item.sortFallbackReason)
+        ? '<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">' + escapeHtml(item.sortFallbackReason) + '</div>'
+        : '';
+      return '<div class="log-item">' +
+        '<div><div class="log-title">' + escapeHtml(item.title || 'Untitled') + '</div>' +
+        '<div class="log-sub">' + escapeHtml(item.director || 'Unknown director') + '</div>' + detail + '</div>' +
+        '<span class="log-badge">' + badge + '</span>' +
+        '</div>';
+    }).join('');
+  }
+  function escapeHtml(s){
+    return String(s || '').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function showStatus(container, kind, html){
+    container.innerHTML = '<div class="status ' + kind + '">' + html + '</div>';
+  }
+
+  // ---------- image capture (front required, back optional) ----------
+  function captureToDataUrl(file){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        img.onload = function(){
+          var canvas = document.createElement('canvas');
+          var maxDim = 1024;
+          var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = reject;
+        img.src = ev.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function updatePreviewCardVisibility(){
+    var hasFront = !!state.frontImageBase64;
+    els.previewCard.style.display = hasFront ? 'block' : 'none';
+    els.backPreviewSlot.style.display = state.backImageBase64 ? 'block' : 'none';
+  }
+
+  els.frontCaptureZone.addEventListener('click', function(){ els.frontPhotoInput.click(); });
+  els.backCaptureZone.addEventListener('click', function(){ els.backPhotoInput.click(); });
+
+  els.frontPhotoInput.addEventListener('change', async function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var dataUrl = await captureToDataUrl(file);
+    state.frontImageBase64 = dataUrl.split(',')[1];
+    state.frontImageMediaType = 'image/jpeg';
+    els.frontPreviewImg.src = dataUrl;
+    els.frontCaptureZone.classList.add('filled');
+    els.frontCaptureLabel.textContent = 'Front cover \u2713';
+    els.formCard.style.display = 'none';
+    updatePreviewCardVisibility();
+    els.previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  els.backPhotoInput.addEventListener('change', async function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var dataUrl = await captureToDataUrl(file);
+    state.backImageBase64 = dataUrl.split(',')[1];
+    state.backImageMediaType = 'image/jpeg';
+    els.backPreviewImg.src = dataUrl;
+    els.backCaptureZone.classList.add('filled');
+    els.backCaptureLabel.textContent = 'Back cover \u2713';
+    els.formCard.style.display = 'none';
+    updatePreviewCardVisibility();
+  });
+
+  els.retakeBtn.addEventListener('click', function(){
+    els.frontPhotoInput.value = '';
+    els.backPhotoInput.value = '';
+    state.frontImageBase64 = null; state.frontImageMediaType = null;
+    state.backImageBase64 = null; state.backImageMediaType = null;
+    els.frontCaptureZone.classList.remove('filled');
+    els.backCaptureZone.classList.remove('filled');
+    els.frontCaptureLabel.textContent = 'Front cover';
+    els.backCaptureLabel.textContent = 'Back cover';
+    els.previewCard.style.display = 'none';
+    els.formCard.style.display = 'none';
+  });
+  els.doneBtn.addEventListener('click', function(){
+    els.formCard.style.display = 'none';
+    els.retakeBtn.click();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ---------- AI identification ----------
+  els.identifyBtn.addEventListener('click', identifyDisc);
+
+  async function identifyDisc(){
+    els.identifyErrorCard.style.display = 'none';
+    els.previewCard.style.display = 'none';
+    els.loadingCard.style.display = 'block';
+    els.loadingText.textContent = 'Reading the case\u2026';
+
+    var apiKey = els.anthropicKeyInput.value.trim();
+    if (!apiKey) {
+      els.loadingCard.style.display = 'none';
+      els.previewCard.style.display = 'block';
+      showStatus(els.identifyErrorBody, 'err', 'No Anthropic API key set. Open Settings, paste your key from console.anthropic.com, and hit Save settings, then try again.');
+      els.identifyErrorCard.style.display = 'block';
+      return;
+    }
+
+    var prompt = "You are cataloging a DVD/Blu-ray/4K UHD disc from photos of its case for a personal home-video database. " +
+      "Look carefully at the image(s) and identify the release. Respond with ONLY a JSON object (no markdown fences, no preamble) with exactly these keys, all string values (use an empty string if genuinely unknown \u2014 never invent a value): " +
+      "title, director, year, genre, runtime, format, studio, distributor, edition, barcode_upc, actors, imdb_rating, verification_status, notes, file_under. " +
+      "'director' MUST be formatted as \"Last, First\" (e.g. \"Nolan, Christopher\"). If there are multiple directors, separate each one, still in \"Last, First\" format, with a semicolon and space. " +
+      "'year' is the film's original theatrical release year, not the disc's release/pressing year. " +
+      "'format' is exactly one of: DVD, Blu-ray, 4K UHD \u2014 infer it from case text, spine color, or logos. " +
+      "'studio' is the film's original production company/studio (e.g. Universal, A24). 'distributor' is the label that put out THIS specific physical disc release (e.g. Criterion, Arrow Video, Vinegar Syndrome, Shout Factory) \u2014 look for their logo on the spine or case; leave empty if it's just a standard studio release with no separate boutique/reissue label. " +
+      "'edition' covers things like \"Director's Cut\", \"Steelbook\", \"2-Disc Special Edition\" \u2014 leave empty if it's a plain standard release. " +
+      "'actors' is a short comma-separated list of the main/billed cast. " +
+      "'imdb_rating' should be left empty \u2014 it cannot be reliably read from a case photo. " +
+      "'verification_status' should be 'Photo-confirmed' if the case clearly shows the title/director, or 'Needs identification' if the image is too unclear/ambiguous to be confident. " +
+      "'notes' should be a short factual sentence about what's visible on the case that supports the identification. Leave barcode_upc empty if not legible in the photo rather than guessing. " +
+      "'file_under' is the title for alphabetizing: the same as 'title' but with a leading \"The\", \"A\", or \"An\" removed (e.g. \"Godfather\" for \"The Godfather\", \"Clockwork Orange\" for \"A Clockwork Orange\"). If there is no leading article, file_under is identical to title.";
+
+    var content = [
+      { type: "image", source: { type: "base64", media_type: state.frontImageMediaType, data: state.frontImageBase64 } }
+    ];
+    if (state.backImageBase64) {
+      content.push({ type: "image", source: { type: "base64", media_type: state.backImageMediaType, data: state.backImageBase64 } });
+    }
+    content.push({ type: "text", text: prompt + (state.backImageBase64 ? " The first image is the front cover, the second is the back cover/spine \u2014 use both together." : " Only the front cover was provided, so director/cast/runtime/barcode may need to be left empty if not visible.") });
+
+    try {
+      var resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [
+            { role: "user", content: content }
+          ]
+        })
+      });
+      if (!resp.ok) {
+        var bodyText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + bodyText.slice(0,200));
+      }
+      var data = await parseJsonResponse(resp);
+      var textBlock = (data.content || []).find(function(b){ return b.type === 'text'; });
+      if (!textBlock) throw new Error('No response from identification model.');
+      var clean = textBlock.text.replace(/```json|```/g, '').trim();
+      var parsed = extractJson(clean);
+      renderForm(parsed);
+    } catch(err){
+      els.loadingCard.style.display = 'none';
+      els.previewCard.style.display = 'block';
+      showStatus(els.identifyErrorBody, 'err', 'Could not identify the disc: ' + escapeHtml(err.message) + '. You can retake the photos or try again.');
+      els.identifyErrorCard.style.display = 'block';
+    }
+  }
+
+  // ---------- editable form ----------
+  function renderForm(values){
+    els.loadingCard.style.display = 'none';
+    var lastSection = null;
+    var html = '';
+    FIELDS.forEach(function(f){
+      if (f.section !== lastSection) {
+        html += '<div class="section-label">' + f.section + '</div>';
+        lastSection = f.section;
+      }
+      var val = escapeHtml(values[f.key] || '');
+      var cls = f.full ? 'full' : '';
+      if (f.textarea) {
+        html += '<div class="' + cls + '"><label class="field-label">' + f.label + '</label>' +
+          '<textarea data-key="' + f.key + '">' + val + '</textarea></div>';
+      } else {
+        html += '<div class="' + cls + '"><label class="field-label">' + f.label + '</label>' +
+          '<input type="text" data-key="' + f.key + '" value="' + val + '"></div>';
+      }
+    });
+    els.formFields.innerHTML = html;
+    els.fileUnderInput.value = values.file_under || '';
+    els.saveStatus.innerHTML = '';
+    els.formCard.style.display = 'block';
+    els.formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function collectFormValues(){
+    var out = {};
+    FIELDS.forEach(function(f){
+      var el = els.formFields.querySelector('[data-key="' + f.key + '"]');
+      out[f.key] = el ? el.value.trim() : '';
+    });
+    return out;
+  }
+
+  function rowArray(values){
+    return FIELDS.map(function(f){ return values[f.key] || ''; });
+  }
+  function tsvRow(values){ return rowArray(values).join('\t'); }
+
+  async function copyText(text){
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch(e) { return false; }
+  }
+
+  // ---------- save flow: try direct write, fall back to copy ----------
+  els.copyBtn.addEventListener('click', async function(){
+    var values = collectFormValues();
+    if (!values.title) {
+      showStatus(els.saveStatus, 'err', 'Title is required before saving.');
+      return;
+    }
+    var clientId = els.clientIdInput.value.trim();
+    var sheetId = els.sheetIdInput.value.trim();
+
+    els.copyBtn.disabled = true;
+    els.copyBtn.textContent = 'Saving\u2026';
+
+    var savedToSheet = false;
+    var errorMsg = null;
+    var placedAlphabetically = false;
+    var sortFallbackReason = null;
+
+    if (clientId && sheetId) {
+      try {
+        var token = state.accessToken || await getAccessToken(clientId);
+        state.accessToken = token;
+        var info = state.sheetInfo || await getSheetInfo(sheetId, token, null);
+        state.sheetInfo = info;
+        var insertIndex;
+        try {
+          var existingTitles = await getExistingTitles(sheetId, token, info.title);
+          insertIndex = await computeInsertIndex(existingTitles, values.title, els.anthropicKeyInput.value.trim(), els.fileUnderInput.value.trim());
+          await insertRowAtPosition(sheetId, token, info.gid, info.title, insertIndex, values);
+          placedAlphabetically = true;
+        } catch (sortErr) {
+          // Alphabetical placement failed for some reason (e.g. couldn't compute position) -- fall back to a plain append so the disc isn't lost.
+          sortFallbackReason = sortErr.message;
+          await appendRowToSheet(sheetId, token, info.title, values);
+        }
+        savedToSheet = true;
+      } catch(e) {
+        errorMsg = e.message;
+      }
+    }
+
+    els.copyBtn.disabled = false;
+    els.copyBtn.textContent = 'Auto add to sheet';
+
+    if (savedToSheet) {
+      var placementNote = placedAlphabetically
+        ? ' \u2014 placed alphabetically by title.'
+        : ' \u2014 added at the bottom instead of alphabetically (' + escapeHtml(sortFallbackReason || 'unknown reason') + ').';
+      showStatus(els.saveStatus, 'ok', '\u2713 Added \u201c' + escapeHtml(values.title) + '\u201d to your Google Sheet' + placementNote);
+      await appendToLog(values, true, placedAlphabetically, sortFallbackReason);
+      return;
+    }
+
+    // fall back to copy-row
+    var text = tsvRow(values);
+    var ok = await copyText(text);
+    await appendToLog(values, false);
+    var reason = errorMsg ? (' (' + escapeHtml(errorMsg) + ')') : ' (no OAuth Client ID set in Settings)';
+    if (ok) {
+      showStatus(els.saveStatus, 'info',
+        'Couldn\u2019t auto-save' + reason + '. Copied instead \u2014 click the first empty cell in your sheet\u2019s next row and paste (Ctrl/Cmd+V).');
+    } else {
+      showStatus(els.saveStatus, 'err',
+        'Couldn\u2019t auto-save' + reason + ', and clipboard copy was blocked. Select and copy this manually:<pre class="row-copy">' + escapeHtml(text) + '</pre>');
+    }
+    setTimeout(function(){
+      els.formCard.style.display = 'none';
+      els.retakeBtn.click();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 2200);
+  });
+
+  els.manualCopyBtn.addEventListener('click', async function(){
+    var values = collectFormValues();
+    if (!values.title) {
+      showStatus(els.saveStatus, 'err', 'Title is required before copying.');
+      return;
+    }
+    var text = tsvRow(values);
+    var ok = await copyText(text);
+    await appendToLog(values, false);
+    if (ok) {
+      showStatus(els.saveStatus, 'ok',
+        '\u2713 Copied. Click the first empty cell in your sheet\u2019s next row and paste (Ctrl/Cmd+V).');
+    } else {
+      showStatus(els.saveStatus, 'err',
+        'Clipboard copy was blocked. Select and copy this manually:<pre class="row-copy">' + escapeHtml(text) + '</pre>');
+    }
+  });
+
+  // ---------- settings actions ----------
+  els.saveSettingsBtn.addEventListener('click', saveSettings);
+  els.testConnectionBtn.addEventListener('click', async function(){
+    var clientId = els.clientIdInput.value.trim();
+    var sheetId = els.sheetIdInput.value.trim();
+    if (!clientId || !sheetId) {
+      showStatus(els.settingsStatus, 'err', 'Enter both a Client ID and Spreadsheet ID first.');
+      return;
+    }
+    showStatus(els.settingsStatus, 'info', 'Testing\u2026 a Google sign-in popup should appear.');
+    try {
+      var token = await getAccessToken(clientId);
+      state.accessToken = token;
+      var info = await getSheetInfo(sheetId, token, null);
+      state.sheetInfo = info;
+      showStatus(els.settingsStatus, 'ok', '\u2713 Connected. Found tab \u201c' + escapeHtml(info.title) + '\u201d \u2014 ready to auto-save with alphabetical placement.');
+    } catch(e) {
+      showStatus(els.settingsStatus, 'err', 'Connection failed: ' + escapeHtml(e.message) + '<br><br>This page\u2019s address is <code>' + escapeHtml(window.location.origin) + '</code> \u2014 add that exactly under Authorized JavaScript origins for your OAuth client in Google Cloud Console, then try again.');
+    }
+  });
+
+  // ---------- log actions ----------
+  els.copyAllBtn.addEventListener('click', async function(){
+    var log = await loadLog();
+    if (!log.length) return;
+    // Oldest first, so pasting fills the sheet in the order discs were added.
+    var ordered = log.slice().reverse();
+    var block = ordered.map(function(item){ return item.row.join('\t'); }).join('\n');
+    var ok = await copyText(block);
+    els.copyAllBtn.textContent = ok ? 'Copied ' + ordered.length + ' row' + (ordered.length === 1 ? '' : 's') + '!' : 'Copy failed \u2014 try again';
+    setTimeout(function(){ els.copyAllBtn.textContent = 'Copy all as one paste block'; }, 2000);
+  });
+
+  els.clearLogBtn.addEventListener('click', async function(){
+    await saveLog([]);
+    renderLog([]);
+  });
+
+  // ---------- init ----------
+  (async function init(){
+    await loadSettings();
+    var log = await loadLog();
+    renderLog(log);
+    if (!els.anthropicKeyInput.value) els.settingsCard.setAttribute('open', '');
+  })();
+
+})();
+</script>
+
+</body>
+</html>
