@@ -353,6 +353,7 @@
     </div>
     <div class="card-body" style="padding-top:0">
       <button class="btn-gold" id="identifyBtn">Identify disc</button>
+      <button class="btn-ghost" id="skipBackBtn" style="margin-top:8px">Skip back cover</button>
       <button class="btn-ghost" id="retakeBtn" style="margin-top:8px">Retake photos</button>
     </div>
   </div>
@@ -459,6 +460,7 @@
     backPreviewImg: document.getElementById('backPreviewImg'),
     backPreviewSlot: document.getElementById('backPreviewSlot'),
     identifyBtn: document.getElementById('identifyBtn'),
+    skipBackBtn: document.getElementById('skipBackBtn'),
     retakeBtn: document.getElementById('retakeBtn'),
     loadingCard: document.getElementById('loadingCard'),
     loadingText: document.getElementById('loadingText'),
@@ -747,21 +749,32 @@
     els.backPreviewSlot.style.display = state.backImageBase64 ? 'block' : 'none';
   }
 
+  var backSkipped = false;
+
   els.frontCaptureZone.addEventListener('click', function(){ els.frontPhotoInput.click(); });
   els.backCaptureZone.addEventListener('click', function(){ els.backPhotoInput.click(); });
 
-  els.frontPhotoInput.addEventListener('change', async function(e){
+  els.frontPhotoInput.addEventListener('change', function(e){
     var file = e.target.files[0];
     if (!file) return;
-    var dataUrl = await captureToDataUrl(file);
-    state.frontImageBase64 = dataUrl.split(',')[1];
-    state.frontImageMediaType = 'image/jpeg';
-    els.frontPreviewImg.src = dataUrl;
-    els.frontCaptureZone.classList.add('filled');
-    els.frontCaptureLabel.textContent = 'Front cover \u2713';
-    els.formCard.style.display = 'none';
-    updatePreviewCardVisibility();
-    els.previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Launch the back-cover camera immediately, in the same tick as this event,
+    // so browsers that require a live user gesture to open a file/camera picker
+    // still allow it. The front photo is processed below in parallel.
+    if (!backSkipped && !state.backImageBase64) {
+      els.backPhotoInput.click();
+    }
+
+    captureToDataUrl(file).then(function(dataUrl){
+      state.frontImageBase64 = dataUrl.split(',')[1];
+      state.frontImageMediaType = 'image/jpeg';
+      els.frontPreviewImg.src = dataUrl;
+      els.frontCaptureZone.classList.add('filled');
+      els.frontCaptureLabel.textContent = 'Front cover \u2713';
+      els.formCard.style.display = 'none';
+      updatePreviewCardVisibility();
+      els.previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   });
 
   els.backPhotoInput.addEventListener('change', async function(e){
@@ -777,11 +790,17 @@
     updatePreviewCardVisibility();
   });
 
+  els.skipBackBtn.addEventListener('click', function(){
+    backSkipped = true;
+    els.backCaptureLabel.textContent = 'Back cover (skipped)';
+  });
+
   els.retakeBtn.addEventListener('click', function(){
     els.frontPhotoInput.value = '';
     els.backPhotoInput.value = '';
     state.frontImageBase64 = null; state.frontImageMediaType = null;
     state.backImageBase64 = null; state.backImageMediaType = null;
+    backSkipped = false;
     els.frontCaptureZone.classList.remove('filled');
     els.backCaptureZone.classList.remove('filled');
     els.frontCaptureLabel.textContent = 'Front cover';
@@ -822,7 +841,7 @@
       "'studio' is the film's original production company/studio (e.g. Universal, A24). 'distributor' is the label that put out THIS specific physical disc release (e.g. Criterion, Arrow Video, Vinegar Syndrome, Shout Factory) \u2014 look for their logo on the spine or case; leave empty if it's just a standard studio release with no separate boutique/reissue label. " +
       "'edition' covers things like \"Director's Cut\", \"Steelbook\", \"2-Disc Special Edition\" \u2014 leave empty if it's a plain standard release. " +
       "'actors' is a short comma-separated list of the main/billed cast. " +
-      "'imdb_rating' should be left empty \u2014 it cannot be reliably read from a case photo. " +
+      "'imdb_rating' can't be read from the case, but if you recognize the film with reasonable confidence, give your best knowledge of its approximate IMDb rating (e.g. \"8.5\"). If you don't recognize the title, or aren't reasonably confident, leave it empty rather than guessing \u2014 and note in 'notes' that it's an approximate rating from memory, not looked up live. " +
       "'verification_status' should be 'Photo-confirmed' if the case clearly shows the title/director, or 'Needs identification' if the image is too unclear/ambiguous to be confident. " +
       "'notes' should be a short factual sentence about what's visible on the case that supports the identification. Leave barcode_upc empty if not legible in the photo rather than guessing. " +
       "'file_under' is the title for alphabetizing: the same as 'title' but with a leading \"The\", \"A\", or \"An\" removed (e.g. \"Godfather\" for \"The Godfather\", \"Clockwork Orange\" for \"A Clockwork Orange\"). If there is no leading article, file_under is identical to title.";
