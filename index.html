@@ -314,6 +314,10 @@
         <button class="btn-ghost" id="saveSettingsBtn">Save settings</button>
         <button class="btn-ghost" id="testConnectionBtn">Test connection</button>
       </div>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn-ghost" id="resortSheetBtn">Re-sort entire sheet by title</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">One-time cleanup for rows added before the sort fix. Re-sorts every existing row alphabetically by title (dropping a leading "The/A/An"), overwriting the sheet\u2019s current row order. Doesn\u2019t change or delete any data, only reorders it.</div>
       <div id="settingsStatus"></div>
     </div>
   </details>
@@ -321,22 +325,30 @@
   <div class="card" id="captureCard">
     <div class="card-body">
       <p class="card-title">Add a disc</p>
-      <p class="card-sub">Front cover is required. Add the back too &mdash; that's usually where director, cast, runtime and barcode are printed.</p>
+      <p class="card-sub">Start with the front cover. You'll be prompted for the back cover right after &mdash; that's usually where director, cast, runtime and barcode are printed.</p>
 
       <input type="file" accept="image/*" capture="environment" id="frontPhotoInput" style="display:none">
       <input type="file" accept="image/*" capture="environment" id="backPhotoInput" style="display:none">
-      <div class="capture-row">
-        <div class="capture-zone" id="frontCaptureZone">
-          <div class="capture-icon"></div>
-          <div class="capture-label" id="frontCaptureLabel">Front cover</div>
-          <div class="capture-sub">tap to photograph</div>
-        </div>
-        <div class="capture-zone" id="backCaptureZone">
-          <div class="capture-icon"></div>
-          <div class="capture-label" id="backCaptureLabel">Back cover</div>
-          <div class="capture-sub">optional, recommended</div>
-        </div>
+      <div class="capture-zone" id="frontCaptureZone">
+        <div class="capture-icon"></div>
+        <div class="capture-label" id="frontCaptureLabel">Front cover</div>
+        <div class="capture-sub">tap to photograph</div>
       </div>
+    </div>
+  </div>
+
+  <div class="card" id="backStepCard" style="display:none">
+    <div class="preview-wrap" style="padding-bottom:0;">
+      <div class="preview-slot" style="max-width:110px;">
+        <img id="backStepFrontThumb" class="preview-img" style="max-height:150px;" alt="Front cover">
+        <div class="preview-caption">Front &#10003;</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p class="card-title" style="margin-top:0;">Now the back cover</p>
+      <p class="card-sub">This is where most of the details usually are &mdash; worth the extra shot.</p>
+      <button class="btn-gold" id="takeBackBtn">Take back cover photo</button>
+      <button class="btn-ghost" id="skipBackBtn" style="margin-top:8px">Skip back cover</button>
     </div>
   </div>
 
@@ -353,7 +365,6 @@
     </div>
     <div class="card-body" style="padding-top:0">
       <button class="btn-gold" id="identifyBtn">Identify disc</button>
-      <button class="btn-ghost" id="skipBackBtn" style="margin-top:8px">Skip back cover</button>
       <button class="btn-ghost" id="retakeBtn" style="margin-top:8px">Retake photos</button>
     </div>
   </div>
@@ -452,9 +463,11 @@
     frontPhotoInput: document.getElementById('frontPhotoInput'),
     backPhotoInput: document.getElementById('backPhotoInput'),
     frontCaptureZone: document.getElementById('frontCaptureZone'),
-    backCaptureZone: document.getElementById('backCaptureZone'),
+    captureCard: document.getElementById('captureCard'),
+    backStepCard: document.getElementById('backStepCard'),
+    backStepFrontThumb: document.getElementById('backStepFrontThumb'),
+    takeBackBtn: document.getElementById('takeBackBtn'),
     frontCaptureLabel: document.getElementById('frontCaptureLabel'),
-    backCaptureLabel: document.getElementById('backCaptureLabel'),
     previewCard: document.getElementById('previewCard'),
     frontPreviewImg: document.getElementById('frontPreviewImg'),
     backPreviewImg: document.getElementById('backPreviewImg'),
@@ -482,6 +495,7 @@
     anthropicKeyInput: document.getElementById('anthropicKeyInput'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
     testConnectionBtn: document.getElementById('testConnectionBtn'),
+    resortSheetBtn: document.getElementById('resortSheetBtn'),
     settingsStatus: document.getElementById('settingsStatus'),
     settingsCard: document.getElementById('settingsCard')
   };
@@ -567,46 +581,22 @@
     return (data.values || []).map(function(row){ return (row[0] || '').trim(); }).filter(Boolean);
   }
 
-  async function computeInsertIndex(existingTitles, newTitle, apiKey, fileUnderOverride){
-    if (!existingTitles.length) return 0;
-    var listText = existingTitles.map(function(a, i){ return (i+1) + '. ' + a; }).join('\n');
-    var overrideClause = fileUnderOverride
-      ? "\nIMPORTANT: The correct filing title for the new film has already been determined to be \"" + fileUnderOverride + "\". Use this exact filing title for the new film rather than working it out yourself \u2014 just apply the same sorting rule to each EXISTING title to find where \"" + fileUnderOverride + "\" belongs alphabetically among them.\n"
-      : "";
-    var prompt = "You are alphabetizing a DVD/Blu-ray collection by film title, in the order rows currently appear in a spreadsheet.\n\n" +
-      "Sorting rule:\n" +
-      "- Ignore a leading \"The\", \"A\", or \"An\" in a film title (e.g. \"The Godfather\" sorts as \"Godfather\", under G; \"A Clockwork Orange\" sorts as \"Clockwork Orange\", under C).\n" +
-      "- Otherwise sort plain alphabetically by the remaining title text.\n" +
-      overrideClause + "\n" +
-      "Existing titles, in their current order:\n" + listText + "\n\n" +
-      "New title to insert: \"" + newTitle + "\"\n\n" +
-      "You may think briefly (a sentence or two at most) before answering, but then respond with a JSON object on its own: {\"insert_index\": N} where N is the 0-based position BEFORE which the new title should be inserted (0 means before the first title in the list; " + existingTitles.length + " means after the last). Pick the position that keeps the list correctly alphabetized per the rule above, assuming the existing list is already correctly ordered by that rule.";
+  // Strips a leading "The"/"A"/"An" and lowercases, so comparisons match standard
+  // film-cataloging alphabetization (e.g. "The Godfather" files under G).
+  function normalizeForSort(title){
+    var t = (title || '').trim();
+    t = t.replace(/^(the|a|an)\s+/i, '');
+    return t.toLowerCase();
+  }
 
-    var resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1500,
-        messages: [
-          { role: "user", content: prompt }
-        ]
-      })
-    });
-    if (!resp.ok) throw new Error('Sort-position request failed (HTTP ' + resp.status + ').');
-    var data = await parseJsonResponse(resp);
-    var textBlock = (data.content || []).find(function(b){ return b.type === 'text'; });
-    if (!textBlock) throw new Error('No response computing sort position.');
-    var parsed = extractJson(textBlock.text);
-    var idx = parseInt(parsed.insert_index, 10);
-    if (isNaN(idx) || idx < 0) idx = 0;
-    if (idx > existingTitles.length) idx = existingTitles.length;
-    return idx;
+  // Deterministic — no AI call, no guessing. Finds the first existing title that
+  // sorts after the new one and inserts before it; appends at the end otherwise.
+  function computeInsertIndex(existingTitles, newTitle, fileUnderOverride){
+    var key = normalizeForSort(fileUnderOverride || newTitle);
+    for (var i = 0; i < existingTitles.length; i++) {
+      if (normalizeForSort(existingTitles[i]).localeCompare(key) > 0) return i;
+    }
+    return existingTitles.length;
   }
 
   async function insertRowAtPosition(spreadsheetId, token, numericSheetId, sheetTitle, insertIndex, values){
@@ -749,33 +739,27 @@
     els.backPreviewSlot.style.display = state.backImageBase64 ? 'block' : 'none';
   }
 
-  var backSkipped = false;
-
   els.frontCaptureZone.addEventListener('click', function(){ els.frontPhotoInput.click(); });
-  els.backCaptureZone.addEventListener('click', function(){ els.backPhotoInput.click(); });
 
   els.frontPhotoInput.addEventListener('change', function(e){
     var file = e.target.files[0];
     if (!file) return;
-
-    // Launch the back-cover camera immediately, in the same tick as this event,
-    // so browsers that require a live user gesture to open a file/camera picker
-    // still allow it. The front photo is processed below in parallel.
-    if (!backSkipped && !state.backImageBase64) {
-      els.backPhotoInput.click();
-    }
-
     captureToDataUrl(file).then(function(dataUrl){
       state.frontImageBase64 = dataUrl.split(',')[1];
       state.frontImageMediaType = 'image/jpeg';
       els.frontPreviewImg.src = dataUrl;
-      els.frontCaptureZone.classList.add('filled');
-      els.frontCaptureLabel.textContent = 'Front cover \u2713';
+      els.backStepFrontThumb.src = dataUrl;
+      els.captureCard.style.display = 'none';
       els.formCard.style.display = 'none';
-      updatePreviewCardVisibility();
-      els.previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      els.backStepCard.style.display = 'block';
+      els.backStepCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
+
+  // "Take back cover photo" is a direct tap on a real button, so the camera
+  // picker opens reliably here even on browsers that block auto-launching it
+  // from a background event handler.
+  els.takeBackBtn.addEventListener('click', function(){ els.backPhotoInput.click(); });
 
   els.backPhotoInput.addEventListener('change', async function(e){
     var file = e.target.files[0];
@@ -784,34 +768,36 @@
     state.backImageBase64 = dataUrl.split(',')[1];
     state.backImageMediaType = 'image/jpeg';
     els.backPreviewImg.src = dataUrl;
-    els.backCaptureZone.classList.add('filled');
-    els.backCaptureLabel.textContent = 'Back cover \u2713';
-    els.formCard.style.display = 'none';
-    updatePreviewCardVisibility();
+    goToReview();
   });
 
   els.skipBackBtn.addEventListener('click', function(){
-    backSkipped = true;
-    els.backCaptureLabel.textContent = 'Back cover (skipped)';
+    state.backImageBase64 = null;
+    state.backImageMediaType = null;
+    goToReview();
   });
+
+  function goToReview(){
+    els.backStepCard.style.display = 'none';
+    updatePreviewCardVisibility();
+    els.previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   els.retakeBtn.addEventListener('click', function(){
     els.frontPhotoInput.value = '';
     els.backPhotoInput.value = '';
     state.frontImageBase64 = null; state.frontImageMediaType = null;
     state.backImageBase64 = null; state.backImageMediaType = null;
-    backSkipped = false;
     els.frontCaptureZone.classList.remove('filled');
-    els.backCaptureZone.classList.remove('filled');
-    els.frontCaptureLabel.textContent = 'Front cover';
-    els.backCaptureLabel.textContent = 'Back cover';
+    els.backStepCard.style.display = 'none';
     els.previewCard.style.display = 'none';
     els.formCard.style.display = 'none';
+    els.captureCard.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
   els.doneBtn.addEventListener('click', function(){
     els.formCard.style.display = 'none';
     els.retakeBtn.click();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ---------- AI identification ----------
@@ -964,7 +950,7 @@
         var insertIndex;
         try {
           var existingTitles = await getExistingTitles(sheetId, token, info.title);
-          insertIndex = await computeInsertIndex(existingTitles, values.title, els.anthropicKeyInput.value.trim(), els.fileUnderInput.value.trim());
+          insertIndex = computeInsertIndex(existingTitles, values.title, els.fileUnderInput.value.trim());
           await insertRowAtPosition(sheetId, token, info.gid, info.title, insertIndex, values);
           placedAlphabetically = true;
         } catch (sortErr) {
@@ -1040,6 +1026,65 @@
       showStatus(els.settingsStatus, 'ok', '\u2713 Connected. Found tab \u201c' + escapeHtml(info.title) + '\u201d \u2014 ready to auto-save with alphabetical placement.');
     } catch(e) {
       showStatus(els.settingsStatus, 'err', 'Connection failed: ' + escapeHtml(e.message) + '<br><br>This page\u2019s address is <code>' + escapeHtml(window.location.origin) + '</code> \u2014 add that exactly under Authorized JavaScript origins for your OAuth client in Google Cloud Console, then try again.');
+    }
+  });
+
+  els.resortSheetBtn.addEventListener('click', async function(){
+    var clientId = els.clientIdInput.value.trim();
+    var sheetId = els.sheetIdInput.value.trim();
+    if (!clientId || !sheetId) {
+      showStatus(els.settingsStatus, 'err', 'Enter both a Client ID and Spreadsheet ID first.');
+      return;
+    }
+    if (!window.confirm('This reorders every existing row alphabetically by title (dropping a leading "The/A/An"). No data is changed or deleted, only the row order. Continue?')) return;
+
+    els.resortSheetBtn.disabled = true;
+    els.resortSheetBtn.textContent = 'Re-sorting\u2026';
+    try {
+      var token = state.accessToken || await getAccessToken(clientId);
+      state.accessToken = token;
+      var info = state.sheetInfo || await getSheetInfo(sheetId, token, null);
+      state.sheetInfo = info;
+
+      var range = encodeURIComponent(info.title) + '!A2:N';
+      var resp = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + range,
+        { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!resp.ok) throw new Error('Could not read existing rows (HTTP ' + resp.status + ').');
+      var data = await parseJsonResponse(resp);
+      var rows = (data.values || []).filter(function(r){ return r.length && r[0]; });
+
+      if (!rows.length) {
+        showStatus(els.settingsStatus, 'ok', 'Nothing to re-sort \u2014 the sheet has no rows yet.');
+        return;
+      }
+
+      // Stable sort: entries with the same title keep their existing relative order.
+      var withIndex = rows.map(function(r, i){ return { r: r, i: i }; });
+      withIndex.sort(function(a, b){
+        var cmp = normalizeForSort(a.r[0]).localeCompare(normalizeForSort(b.r[0]));
+        return cmp !== 0 ? cmp : (a.i - b.i);
+      });
+      var sortedRows = withIndex.map(function(x){ return x.r; });
+
+      var writeRange = encodeURIComponent(info.title) + '!A2:N' + (sortedRows.length + 1);
+      var writeResp = await fetch(
+        'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/' + writeRange + '?valueInputOption=USER_ENTERED',
+        {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ values: sortedRows })
+        }
+      );
+      if (!writeResp.ok) {
+        var errText = await writeResp.text();
+        throw new Error('Could not write sorted rows (HTTP ' + writeResp.status + '): ' + errText.slice(0,200));
+      }
+      showStatus(els.settingsStatus, 'ok', '\u2713 Re-sorted ' + sortedRows.length + ' row' + (sortedRows.length === 1 ? '' : 's') + ' alphabetically by title.');
+    } catch(e) {
+      showStatus(els.settingsStatus, 'err', 'Re-sort failed: ' + escapeHtml(e.message));
+    } finally {
+      els.resortSheetBtn.disabled = false;
+      els.resortSheetBtn.textContent = 'Re-sort entire sheet by title';
     }
   });
 
